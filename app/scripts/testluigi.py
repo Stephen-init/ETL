@@ -1,13 +1,13 @@
 import luigi
 from luigi import Task,Target,Parameter,LocalTarget,IntParameter,DictParameter
 import pandas as pd
-from etl.core import *
-from etl.test import *
+from core import *
+from test import *
 import os,yaml
 
 global project_config
 with open("project.yaml","r") as f:
-    project_config=yaml.load(f)
+    project_config=yaml.load(f,loader=yaml.CLoader)
 
 
 class ReadRaw(Task):
