@@ -1,0 +1,96 @@
+project: allium
+version: 1.0
+sharepoint: /Clients/Projects/HSF/Sunflower/01_Data
+users: /Users/stephen/Yellow Canary/Yellow Canary - Documents
+
+docker:
+  container:
+    services:
+      luigid:
+        build:
+          context: .
+          dockerfile: Dockerfile
+        command: luigid 
+        image: luigiui:1.0
+        ports:
+        - 8082:8082
+        
+      pipeline:
+          image: luigiui:1.0
+          depends_on:
+            - luigid
+          volumes:
+            - ./data_root:/home/pipeline/data/
+            - ./app/testluigi.py:/home/pipeline/testluigi.py
+        
+          build:
+            context: .
+          command: bash -c "LUIGI_CONFIG_PATH=luigi.cfg python -m luigi --module testluigi TestData --scheduler-host luigid"
+    version: '3'
+  image:
+    - FROM python:3.9.7-slim
+    - ENV PYTHONPATH=/home/pipeline:$PYTHONPATH
+    - RUN mkdir -p /home/pipeline
+    - COPY ./app /home/pipeline/
+    - COPY project.yaml /home/pipeline
+    - RUN pip install -r /home/pipeline/requirements.txt
+    - WORKDIR /home/pipeline
+
+raw:
+  payslips:
+    files:
+      include:
+        - payslip
+        - cohort
+      exclude:
+        - sample
+        - sunflower
+      broken:
+        - 
+    columns:
+      include:
+        -
+      drop:
+        -
+      add:
+        -
+      rename:
+        -
+  timesheets:
+    files:
+      include:
+        - payslip
+        - cohort
+      exclude:
+        - sample
+        - sunflower
+      broken:
+        - 
+    columns:
+      include:
+        -
+      drop:
+        -
+      add:
+        -
+      rename:
+        -
+  master:
+    files:
+      include:
+        - payslip
+        - cohort
+      exclude:
+        - sample
+        - sunflower
+      broken:
+        - 
+    columns:
+      include:
+        -
+      drop:
+        -
+      add:
+        -
+      rename:
+        -
