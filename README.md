@@ -30,4 +30,4 @@ Read all files in data/origin
 3. check data_root
 
 ## Pipeline Design
-![alt text](https://github.com/Stephen-init/ETL-pipeline/blob/main/design.png)
+![alt text](https://github.com/Stephen-init/ETL/blob/main/design.png)
