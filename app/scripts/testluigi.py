@@ -69,3 +69,26 @@ class TestData(Task):
             with pd.ExcelWriter(ofile) as writer:  # doctest: +SKIP
                 coltest.to_excel(writer,sheet_name='Column Test')
                 valuetest.to_excel(writer,sheet_name='Value Test')
+
+class StagingTimesheets(Task):
+    params=DictParameter()
+
+    def requires(self):
+        return RemoveDuplicates()
+
+    def output(self):
+        return LocalTarget(self.params['output_file'],format=luigi.format.Nop)
+    
+    def run(self):
+        data=pd.read_csv(self.params['input_file'])
+        data = data.reindex(data.columns.union(project_config['staging']['timesheets']['match'], sort=False), axis=1)
+        for i,j in zip(list(data[project_config['staging']['timesheets']['match']].columns),project_config['staging']['timesheets']['type']):
+            data[i]=data[i].astype(j,errors='ignore')
+        for i in project_config['staging']['timesheets']['plugins']:
+            if project_config['staging']['timesheets']['plugins'][i]['switch']==True:
+                data=getattr(plugins.timesheets(data), i)(project_config['staging']['timesheets']['plugins'][i])
+        data= data[project_config['staging']['timesheets']['match']]
+        data.columns=project_config['staging']['timesheets']['requires']
+        with self.output().open('wb') as ofile:
+            data.to_csv(ofile, index=False)
+            del data
