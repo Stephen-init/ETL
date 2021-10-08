@@ -37,4 +37,4 @@ Read all files in data/origin
 ![alt text](https://github.com/Stephen-init/ETL/blob/main/design.png)
 
 ## Pipeline Design
-![alt text](https://github.com/Stephen-init/ETL/blob/main/Blank diagram-2.png)
+![alt text](https://github.com/Stephen-init/ETL/blob/main/pipeline.png)
