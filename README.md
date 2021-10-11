@@ -1,32 +1,33 @@
-# ETL-pipeline
-How to run pipeline: 
-   1. run luigid on bash or zash
-   2. run main.py under app_dev folder
-   3. required package: openpyxl pandas pyyaml luigi
- 
-##------------ the following hasn't been connected due to pipeline in dev -------------
 ## Unfinised Job
-1. haven't reset folder structure
-2. luigi pipeline is currently on app_dev folder. Haven't been connected to docker environment.
-
+1. unexpected exit code -9 happens when running luigi on docker (I have issued a ticket on luigi support. Currently waiting for their response)
+2. The output exception.xlsx hasn't been properly formatted 
+3. 
 ## How to Run
-python3 -m main (current don't work due to pipeline in dev)
+python3 -m main 
 
 ## Luigi UI
 localhost:8082
 
-## Change on Code
-Delete pipeline container
+## Change on Code & pickup pipeline tasks
+Delete etl_pipeline_01 container
 docker-compose -f pipeline.yaml up -d 
 
-## Re run task 
-docker start <pipeline container>
+## Data Structure:
 
-## Current Structure:
-Read all files in data/origin 
---> transform files to csv and generate dataset().csv in data/raw 
---> concat all data under data/raw and generate metadata.csv
---> test all data under data/raw and generate testraw.xlsx with 2 sheets (column test & NaN test)
+data
+ - raw
+   - payslips --- original payslips files on sharedrive converted to csv
+   - timesheets --- original timesheets files on sharedrive converted to csv
+ - metaraw
+   - raw --- concat payslips / concat timesheets 
+   - dupfree --- metaraw without dups
+ - staging
+   - raw --- transformed to staging files as requested
+   - excepiton --- the final exception report on xlsx format
+ - test
+   - exceptions --- every exception test results on csv format
+   - process --- test results on every stage of transforming data 
+
 
 ## After task finish
 1. http://localhost:8082/ to check test status & flow charts
@@ -34,7 +35,7 @@ Read all files in data/origin
 3. check data_root
 
 ## Environment Design
-![alt text](https://github.com/Stephen-init/ETL/blob/main/design.png)
+![alt text](https://github.com/Stephen-init/ETL/blob/main/design/design.png)
 
 ## Pipeline Design
-![alt text](https://github.com/Stephen-init/ETL/blob/main/pipeline.png)
+![alt text](https://github.com/Stephen-init/ETL/blob/main/design/pipeline.png)
