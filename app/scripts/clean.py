@@ -1,5 +1,5 @@
 from luigi.task import WrapperTask
-from staging import *
+from scripts.staging import *
 
 class StagingPayslipsTests(Task):
     col=Parameter()
@@ -81,7 +81,7 @@ class StagingTimesheetsExam(Task):
             dataset.to_csv(ofile)
             del dataset
 
-class GenerateExceptionReports(WrapperTask):
+class GenerateExceptionReports(Task):
     params=DictParameter()
 
     def requires(self):
@@ -92,20 +92,22 @@ class GenerateExceptionReports(WrapperTask):
     
     def run(self):
         input_path=core.TargetFiles(self.params['input_folder']).folder_reader()
+
         with self.output().open('wb') as ofile:
             with pd.ExcelWriter(ofile) as writer: 
                 for file in input_path:
                     df = pd.read_csv(file)
+                    filename=os.path.basename(file)
                     if df.empty==False:
-                        if file.split('/')[0]=='payslips.csv':
-                            df.to_excel(writer,sheet_name=file.split('/')[0])
-                        elif file.split('/')[0]=='timesheets.csv':
-                            df.to_excel(writer,sheet_name=file.split('/')[0])
-                        elif file.split('/')[0]=='payslips_dups.csv':
-                            df.to_excel(writer,sheet_name=file.split('/')[0])
-                        elif file.split('/')[0]=='timesheets_dups.csv':
-                            df.to_excel(writer,sheet_name=file.split('/')[0])
+                        if filename=='payslips.csv':
+                            df.to_excel(writer,sheet_name=filename)
+                        elif filename=='timesheets.csv':
+                            df.to_excel(writer,sheet_name=filename)
+                        elif filename=='payslips_dups.csv':
+                            df.to_excel(writer,sheet_name=filename)
+                        elif filename=='timesheets_dups.csv':
+                            df.to_excel(writer,sheet_name=filename)
                         else:
-                            df.to_excel(writer,sheet_name=file.split('/')[0])    
-                    writer.save()            
+                            df.to_excel(writer,sheet_name=filename) 
+               
             

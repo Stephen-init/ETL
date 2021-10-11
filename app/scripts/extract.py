@@ -1,13 +1,13 @@
-import luigi
-from luigi import Task,Target,Parameter,LocalTarget,IntParameter,DictParameter,ListParameter
+import luigi,os,yaml
+from luigi.task import WrapperTask
+from luigi import Task,Target,Parameter,LocalTarget,IntParameter,DictParameter,ListParameter,WrapperTask
 import pandas as pd
-import core,test
-import os,yaml
+import scripts.test as test
+import scripts.core as core
 
 global project_config
 with open("project.yaml","r") as f:
     project_config=yaml.load(f,Loader=yaml.CLoader)
-
 
 class PayslipsRaw(Task):
     filepath=Parameter()
@@ -149,7 +149,7 @@ class ExtractTest(Task):
                 dataset.to_csv(ofile)
                 del dataset,p_metaraw,p_path,p_rawdata,t_metaraw,t_path,t_rawdata
 
-class RemoveDuplicates(Task):
+class RemoveDuplicatesPayslips(Task):
     params=DictParameter()
 
     def requires(self):
@@ -157,24 +157,42 @@ class RemoveDuplicates(Task):
     
     def output(self):
         return {'payslips_dups': LocalTarget(self.params['payslips_dups'],format=luigi.format.Nop),
-                'timesheets_dups': LocalTarget(self.params['timesheets_dups'],format=luigi.format.Nop),
-                'payslips': LocalTarget(self.params['payslips'],format=luigi.format.Nop),
-                'timesheets': LocalTarget(self.params['timesheets'],format=luigi.format.Nop),
+                'payslips': LocalTarget(self.params['payslips'],format=luigi.format.Nop)
                 }
 
     def run(self):
         meta_payslips=pd.read_csv(self.params['metaraw_payslips'])
-        meta_timesheets=pd.read_csv(self.params['metaraw_timesheets'])
         cleand_payslips=core.cleaning(meta_payslips).duplicates()
-        cleand_timesheets=core.cleaning(meta_timesheets).duplicates()
         
         with self.output()['payslips_dups'].open('wb') as ofile:
             cleand_payslips[1].to_csv(ofile)
         with self.output()['payslips'].open('wb') as ofile:
             cleand_payslips[0].to_csv(ofile)
+        del meta_payslips,cleand_payslips
+
+
+class RemoveDuplicatesTimesheets(Task):
+    params=DictParameter()
+
+    def requires(self):
+        return ExtractTest()
+    
+    def output(self):
+        return {'timesheets_dups': LocalTarget(self.params['timesheets_dups'],format=luigi.format.Nop),
+                'timesheets': LocalTarget(self.params['timesheets'],format=luigi.format.Nop)
+                }
+
+    def run(self):
+        meta_timesheets=pd.read_csv(self.params['metaraw_timesheets'])
+        cleand_timesheets=pd.DataFrame()
+        
         with self.output()['timesheets_dups'].open('wb') as ofile:
-            cleand_timesheets[1].to_csv(ofile)
+            cleand_timesheets.to_csv(ofile)
         with self.output()['timesheets'].open('wb') as ofile:
-            cleand_timesheets[0].to_csv(ofile)
-        del meta_payslips,meta_timesheets,cleand_payslips,cleand_timesheets
+            meta_timesheets.to_csv(ofile)
+
+class RemoveDuplicates(WrapperTask):
+
+    def requires(self):
+            return [RemoveDuplicatesPayslips(),RemoveDuplicatesTimesheets()]
 

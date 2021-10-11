@@ -1,5 +1,5 @@
-from extract import *
-import plugins
+from scripts.extract import *
+import scripts.plugins as plugins
 
 class StagingPayslipsRaw(Task):
     params=DictParameter()
