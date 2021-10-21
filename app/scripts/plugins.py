@@ -1,4 +1,4 @@
-import pandas as pd
+import modin.pandas as pd
 import uuid
 
 class Payslips:
