@@ -1,4 +1,3 @@
-from luigi.task import WrapperTask
 from scripts.staging import *
 
 class StagingPayslipsTests(Task):
