@@ -1,4 +1,4 @@
-import modin.pandas as pd
+import pandas as pd
 
 class RawTest:
     def __init__(self,sample:dict):

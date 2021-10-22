@@ -1,4 +1,2 @@
 from luigi.scheduler import Scheduler
-from scripts.clean import *
-
-
+from corescripts.clean import *

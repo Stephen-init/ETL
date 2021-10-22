@@ -1,8 +1,9 @@
 import luigi,os,yaml
 from luigi import Task,Target,Parameter,LocalTarget,IntParameter,DictParameter
-import modin.pandas as pd
-import scripts.test as test
-import scripts.core as core
+import os 
+import pandas as pd
+import corescripts.test as test
+import corescripts.core as core
 
 global project_config
 with open("project.yaml","r") as f:

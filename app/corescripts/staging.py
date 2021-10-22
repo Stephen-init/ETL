@@ -1,5 +1,5 @@
-from scripts.extract import *
-import scripts.plugins as plugins
+from corescripts.extract import *
+import corescripts.plugins as plugins
 
 class StagingPayslipsRaw(Task):
     params=DictParameter()

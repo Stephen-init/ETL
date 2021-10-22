@@ -1,4 +1,4 @@
-from scripts.staging import *
+from corescripts.staging import *
 
 class StagingPayslipsTests(Task):
     col=Parameter()
