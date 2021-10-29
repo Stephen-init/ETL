@@ -1,6 +1,8 @@
 services:
   luigid:
     build:
+      args:
+      - SSH_PRIVATE_KEY
       context: .
       dockerfile: Dockerfile
     command: luigid

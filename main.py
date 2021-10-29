@@ -17,6 +17,6 @@ if __name__ == '__main__':
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'PyYAML'])
     import yaml
     start("project.yaml")
-    bashCommand = "docker-compose -f pipeline.yaml up -d"
-    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    bashCommand = 'SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" docker-compose -f pipeline.yaml  up -d'
+    process = subprocess.Popen(bashCommand,shell=True, stdout=subprocess.PIPE)
     output, error = process.communicate()

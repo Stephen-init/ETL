@@ -1,5 +1,2 @@
-numpy
 luigi
-openpyxl
-PyYAML
-pandas
+git+ssh://git@github.com/Stephen-init/yclib.git 

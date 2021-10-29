@@ -10,6 +10,8 @@ docker:
         build:
           context: .
           dockerfile: Dockerfile
+          args:
+            - SSH_PRIVATE_KEY
         command: luigid 
         image: luigiui:1.0
         ports:
@@ -28,11 +30,26 @@ docker:
           command: bash -c "LUIGI_CONFIG_PATH=luigi.cfg python -m luigi --module main GenerateExceptionReports --workers=10 --scheduler-host luigid"
     version: '3'
   image:
+    - FROM python:3.9.7-slim as intermediate
+    - RUN apt-get update
+    - RUN apt-get install -y git
+    - ARG SSH_PRIVATE_KEY
+    - RUN mkdir /root/.ssh/
+    - RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
+    - RUN chmod 600 /root/.ssh/id_rsa
+    - RUN touch /root/.ssh/known_hosts
+    - RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+    - ADD ./app/requirements.txt /
+    - WORKDIR /pip-packages/
+    - RUN pip download -r /requirements.txt
+
     - FROM python:3.9.7-slim
     - ENV PYTHONPATH=/home/pipeline:$PYTHONPATH
+    - WORKDIR /pip-packages/
+    - COPY --from=intermediate /pip-packages/ /pip-packages/
+    - RUN pip install --no-index --find-links=/pip-packages/ /pip-packages/*
     - RUN mkdir -p /home/pipeline
-    - COPY ./app /home/pipeline/
-    - RUN pip install -r /home/pipeline/requirements.txt
+    - ADD ./app /home/pipeline/
     - WORKDIR /home/pipeline
 
 raw:
@@ -42,35 +59,35 @@ raw:
 
 staging:
   payslips: [
-             {staging: 'EmployeeCode',         raw: 'ID Number',                  type: 'object',         tests: [],                      plugin: {}}
+             {staging: 'EmployeeCode',         raw: 'IdNumber',                  type: 'object',         tests: [],                      plugin: {}}
             ,{staging: 'PayslipCode',          raw: 'create_PayslipCode',         type: 'object',         tests: [],                      plugin: {name: 'PayslipCode', ref: [], switch: True}}
             ,{staging: 'PaysliplineCode',      raw: 'create_PaysliplineCode',     type: 'object',         tests: [],                      plugin: {name: 'PaysliplineCode', ref: ['EmployeeCode', 'PeriodEndDate'], switch: True}}
             ,{staging: 'PeriodStartDate',      raw: 'create_PeriodStartDate',     type: 'datetime64[ns]', tests: ['date'],                plugin: {name: 'PeriodStartDate', ref: ['PayFrequency', 'PeriodEndDate'], switch: True}}
-            ,{staging: 'PeriodEndDate',        raw: 'Period Ending Date',         type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
-            ,{staging: 'PayFrequency',         raw: 'Pay Frequency',              type: 'object',         tests: [],                      plugin: {}}
-            ,{staging: 'Paycode',              raw: 'Hours or A/D Code Desc',     type: 'object',         tests: ['inscope'],             plugin: {}}
-            ,{staging: 'Hours',                raw: 'Number of Units',            type: 'float64',        tests: ['numeric'],             plugin: {}}
+            ,{staging: 'PeriodEndDate',        raw: 'PeriodEndingDate',         type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
+            ,{staging: 'PayFrequency',         raw: 'PayFrequency',              type: 'object',         tests: [],                      plugin: {}}
+            ,{staging: 'Paycode',              raw: 'HoursorADCodeDesc',     type: 'object',         tests: ['inscope'],             plugin: {}}
+            ,{staging: 'Hours',                raw: 'NumberOfUnits',            type: 'float64',        tests: ['numeric'],             plugin: {}}
             ,{staging: 'Amount',               raw: 'Value',                      type: 'float64',        tests: ['numeric'],             plugin: {}}
-            ,{staging: 'EmployeeType',         raw: 'Employment Type Code Desc',  type: 'object',         tests: ['inscope'],             plugin: {}}
-            ,{staging: 'EmployeeClassication', raw: 'Job Title Code Description', type: 'object',         tests: ['inscope'],             plugin: {}}
-            ,{staging: 'DateOfBirth',          raw: 'Date of Birth',              type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
-            ,{staging: 'BaseHours',            raw: 'Base Hours',                 type: 'float64',        tests: ['numeric','positive'],  plugin: {}}
-            ,{staging: 'Site',                 raw: 'Account Code Description',   type: 'object',         tests: [],                      plugin: {}}
+            ,{staging: 'EmployeeType',         raw: 'EmploymentTypeCodeDesc',  type: 'object',         tests: ['inscope'],             plugin: {}}
+            ,{staging: 'EmployeeClassication', raw: 'JobTitleCodeDescription', type: 'object',         tests: ['inscope'],             plugin: {}}
+            ,{staging: 'DateOfBirth',          raw: 'DateOfBirth',              type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
+            ,{staging: 'BaseHours',            raw: 'BaseHours',                 type: 'float64',        tests: ['numeric','positive'],  plugin: {}}
+            ,{staging: 'Site',                 raw: 'AccountCodeDescription',   type: 'object',         tests: [],                      plugin: {}}
             ,{staging: 'Source',               raw: 'source',                     type: 'object',         tests: [],                      plugin: {}}
             ]
 
   timesheets: [
-             {staging: 'EmployeeCode',         raw: 'Export Code',                type: 'object',         tests: [],                      plugin: {}}
+             {staging: 'EmployeeCode',         raw: 'ExportCode',                type: 'object',         tests: [],                      plugin: {}}
             ,{staging: 'Award',                raw: 'create_award',               type: 'object',         tests: ['inscope'],             plugin: {name: 'Award', ref: [], switch: True}}
             ,{staging: 'Date',                 raw: 'Date',                       type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
-            ,{staging: 'ClockedIn',            raw: 'Pay Start',                  type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
-            ,{staging: 'ClockedOut',           raw: 'Pay End',                    type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
-            ,{staging: 'RosteredIn',           raw: 'Sched Start',                type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
-            ,{staging: 'RosteredOut',          raw: 'Sched End',                  type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
+            ,{staging: 'ClockedIn',            raw: 'PayStart',                  type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
+            ,{staging: 'ClockedOut',           raw: 'PayEnd',                    type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
+            ,{staging: 'RosteredIn',           raw: 'SchedStart',                type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
+            ,{staging: 'RosteredOut',          raw: 'SchedEnd',                  type: 'datetime64[ns]', tests: ['date'],                plugin: {}}
             ,{staging: 'Break',                raw: 'Break',                      type: 'object',         tests: [],                      plugin: {}}
             ,{staging: 'Region',               raw: 'Site',                       type: 'object',         tests: [],                      plugin: {}}
             ,{staging: 'ShiftRole',            raw: 'Role',                       type: 'object',         tests: ['inscope'],             plugin: {}}
-            ,{staging: 'ShiftClassification',  raw: 'Employee Type',              type: 'object',         tests: ['inscope'],             plugin: {}}
+            ,{staging: 'ShiftClassification',  raw: 'EmployeeType',              type: 'object',         tests: ['inscope'],             plugin: {}}
             ,{staging: 'Source',               raw: 'source',                     type: 'object',         tests: [],                      plugin: {}}
             ]
 

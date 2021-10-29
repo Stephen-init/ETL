@@ -1,7 +1,3 @@
-## Unfinised Job
-1. unexpected exit code -9 happens when running luigi on docker (I have issued a ticket on luigi support. Currently waiting for their response)
-2. The output exception.xlsx hasn't been properly formatted 
-3. 
 ## How to Run
 python3 -m main 
 
