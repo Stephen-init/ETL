@@ -1,4 +1,4 @@
-import subprocess,sys
+import subprocess,sys,os
 
 def start(config):
     with open(config,'r') as f:
@@ -20,3 +20,6 @@ if __name__ == '__main__':
     bashCommand = 'SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" docker-compose -f pipeline.yaml  up -d'
     process = subprocess.Popen(bashCommand,shell=True, stdout=subprocess.PIPE)
     output, error = process.communicate()
+    os.remove("Dockerfile")
+    os.remove("pipeline.yaml")
+

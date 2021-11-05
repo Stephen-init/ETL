@@ -1,4 +1,6 @@
-from scripts.staging import *
+import luigi
+from yclib import reader,tester,merger
+from luigi.contrib.postgres import PostgresTarget
 
 class StagingPayslipsTests(luigi.Task):
     col=luigi.Parameter()
@@ -94,4 +96,5 @@ class GenerateExceptionReports(luigi.Task):
 
         with self.output().open('wb') as ofile:
             core.FileHandler(input_path).save_excel(ofile)
-            
+
+

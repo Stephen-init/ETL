@@ -1,2 +1,1 @@
-from luigi.scheduler import Scheduler
-from scripts.clean import *
+from scripts.extract import *

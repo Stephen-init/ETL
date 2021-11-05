@@ -1,2 +1,2 @@
 luigi
-git+ssh://git@github.com/Stephen-init/yclib.git 
+git+ssh://git@github.com/YellowCanaryOperations/yc_etl.git

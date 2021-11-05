@@ -3,59 +3,9 @@ version: 1.0
 sharepoint: /Clients/Projects/HSF/Sunflower/01_Data
 users: /Users/stephen/Yellow Canary/Yellow Canary - Documents
 
-docker:
-  container:
-    services:
-      luigid:
-        build:
-          context: .
-          dockerfile: Dockerfile
-          args:
-            - SSH_PRIVATE_KEY
-        command: luigid 
-        image: luigiui:1.0
-        ports:
-        - 8082:8082
-        
-      pipeline:
-          image: luigiui:1.0
-          depends_on:
-            - luigid
-          volumes:
-            - ./app:/home/pipeline
-            - ./project.yaml:/home/pipeline/project.yaml
-        
-          build:
-            context: .
-          command: bash -c "LUIGI_CONFIG_PATH=luigi.cfg python -m luigi --module main GenerateExceptionReports --workers=10 --scheduler-host luigid"
-    version: '3'
-  image:
-    - FROM python:3.9.7-slim as intermediate
-    - RUN apt-get update
-    - RUN apt-get install -y git
-    - ARG SSH_PRIVATE_KEY
-    - RUN mkdir /root/.ssh/
-    - RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
-    - RUN chmod 600 /root/.ssh/id_rsa
-    - RUN touch /root/.ssh/known_hosts
-    - RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
-    - ADD ./app/requirements.txt /
-    - WORKDIR /pip-packages/
-    - RUN pip download -r /requirements.txt
-
-    - FROM python:3.9.7-slim
-    - ENV PYTHONPATH=/home/pipeline:$PYTHONPATH
-    - WORKDIR /pip-packages/
-    - COPY --from=intermediate /pip-packages/ /pip-packages/
-    - RUN pip install --no-index --find-links=/pip-packages/ /pip-packages/*
-    - RUN mkdir -p /home/pipeline
-    - ADD ./app /home/pipeline/
-    - WORKDIR /home/pipeline
-
 raw:
-  payslips: {include: ["payslip","cohort 1"], exclude: ["sample","sunflower"], broken: []}
-  timesheets: {include: ["to","cohort 1"], exclude: ["sample","sunflower","locations","payslips"], broken: []}
-  master: {include: ["payslip","cohort 1"], exclude: ["sample","sunflower"], broken: []}
+  payslips: {include: ["payslip","cohort 1"], exclude: ["sample","sunflower"]}
+  timesheets: {include: ["to","cohort 1"], exclude: ["sample","sunflower","locations","payslips"]}
 
 staging:
   payslips: [
@@ -135,3 +85,76 @@ sentinel:
              'iso','object','object','object'],
       Region: ['National','Qld','Nsw','Act','Vic','Tas','Nt','Sa','Wa','Brisbane']
     }
+  
+docker:
+  container:
+    services:
+      luigid:
+        build:
+          context: .
+          dockerfile: Dockerfile
+          args:
+            - SSH_PRIVATE_KEY
+        command: luigid 
+        image: luigiui:1.0
+        ports:
+        - 8082:8082
+        
+      pipeline:
+          image: luigiui:1.0
+          depends_on:
+            postgres:
+              condition: service_healthy
+          links:
+            - postgres
+            - luigid
+          volumes:
+            - ./app:/home/pipeline
+            - ./project.yaml:/home/pipeline/project.yaml
+          build:
+            context: .
+          command: bash -c "python -m luigi --module main ExtractTest --workers=2 --scheduler-host luigid"
+      
+      postgres:
+          image: postgres:9-bullseye
+          environment:
+            - POSTGRES_DB=luigi
+            - POSTGRES_USER=analyst
+            - POSTGRES_PASSWORD=temp
+          ports:
+                - '6666:5432'
+          healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+          volumes:
+            - luigi-data:/var/lib/postgresql/data/ 
+
+    volumes:
+      luigi-data:
+        name: luigi-data
+    version: '3.7'
+  
+  image:
+    - FROM python:3.9.7-slim as intermediate
+    - RUN apt-get update
+    - RUN apt-get install -y git
+    - ARG SSH_PRIVATE_KEY
+    - RUN mkdir /root/.ssh/
+    - RUN echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa
+    - RUN chmod 600 /root/.ssh/id_rsa
+    - RUN touch /root/.ssh/known_hosts
+    - RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+    - ADD ./app/requirements.txt /
+    - WORKDIR /pip-packages/
+    - RUN pip download -r /requirements.txt
+
+    - FROM python:3.9.7-slim
+    - ENV PYTHONPATH=/home/pipeline:$PYTHONPATH
+    - WORKDIR /pip-packages/
+    - COPY --from=intermediate /pip-packages/ /pip-packages/
+    - RUN pip install --no-index --find-links=/pip-packages/ /pip-packages/*
+    - RUN mkdir -p /home/pipeline
+    - ADD ./app /home/pipeline/
+    - WORKDIR /home/pipeline
